@@ -1,0 +1,77 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.panel {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.folder-grid {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.folder {
+    background-color: #fbd962;
+    width: 120px;
+    height: 100px;
+    border-radius: 5px 15px 5px 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+}
+
+.folder:hover {
+    transform: scale(1.05);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Kitap ve Sayfa Tasarımı */
+#book-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 50px;
+}
+
+.page {
+    background-color: #fff;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+.page img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+#close-book-btn {
+    margin-bottom: 20px;
+    padding: 10px 20px;
+    cursor: pointer;
+}

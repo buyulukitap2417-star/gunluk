@@ -22,12 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-btn').addEventListener('click', async () => {
         const email = document.getElementById('email-input').value;
         const password = document.getElementById('password-input').value;
-        const errorEl = document.getElementById('login-error');
         
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) {
-            errorEl.innerText = "Giriş başarısız: Bilgilerinizi kontrol edin.";
-            errorEl.style.display = "block";
+            showToast("Giriş başarısız: Bilgilerinizi kontrol edin.", "error");
         }
     });
 
@@ -49,6 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         document.getElementById('book').innerHTML = ''; // HTML'i temizle
     });
+    
+    // Sticker Ekleme İşlemleri
+    document.querySelectorAll('.sticker-btn').forEach(btn => {
+        btn.addEventListener('click', addStickerToPage);
+    });
 });
 
 // Arayüz Geçiş Fonksiyonları
@@ -65,6 +68,20 @@ function showLogin() {
     document.getElementById('login-section').classList.add('active');
 }
 
+// Uyarı Bildirim (Toast) Fonksiyonu
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerText = message;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000); // 3 saniye sonra kaybolur
+}
+
 // 1. Klasörleri (Yılları) Supabase'den Çek
 async function loadFolders() {
     const { data, error } = await supabaseClient
@@ -72,7 +89,7 @@ async function loadFolders() {
         .select('year')
         .order('year', { ascending: false });
 
-    if (error) return console.error('Veri çekme hatası:', error);
+    if (error) return showToast('Klasörler yüklenirken hata oluştu.', 'error');
 
     // Tekrar eden yılları temizle (Sadece benzersiz yıllar klasör olacak)
     const uniqueYears = [...new Set(data.map(item => item.year))];
@@ -94,9 +111,9 @@ async function openYearBook(year) {
         .from('diary_entries')
         .select('*')
         .eq('year', year)
-        .order('created_at', { ascending: true }); // Eskiden yeniye doğru kitap gibi okunur
+        .order('photo_date', { ascending: true }); // Tarihe göre kitap gibi okunur
 
-    if (error) return console.error('Fotoğraf çekme hatası:', error);
+    if (error) return showToast('Fotoğraflar çekilirken hata oluştu.', 'error');
 
     document.getElementById('app-section').classList.add('hidden');
     document.getElementById('book-wrapper').classList.remove('hidden');
@@ -109,9 +126,16 @@ async function openYearBook(year) {
 
     // Fotoğrafları sayfa olarak ekle
     data.forEach(entry => {
+        // Tarihi güzel bir formata çevir
+        const dateObj = new Date(entry.photo_date);
+        const formattedDate = dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
         bookDiv.innerHTML += `
             <div class="page">
                 <img src="${entry.image_url}" alt="Günlük Fotoğrafı">
+                <div style="position: absolute; bottom: 20px; background: rgba(255,255,255,0.7); padding: 5px 15px; border-radius: 15px; font-weight: 600;">
+                    ${formattedDate}
+                </div>
             </div>
         `;
     });
@@ -139,15 +163,23 @@ async function openYearBook(year) {
 // 3. Yeni Fotoğraf Yükleme İşlemi
 async function uploadPhoto() {
     const fileInput = document.getElementById('file-input');
-    const yearInput = document.getElementById('year-input').value;
+    const dateInput = document.getElementById('date-input').value;
     
-    if (!fileInput.files.length || !yearInput) {
-        alert("Lütfen bir fotoğraf seçin ve yıl girin!");
+    if (!fileInput.files.length || !dateInput) {
+        showToast("Lütfen bir fotoğraf seçin ve tarih belirleyin!", "error");
         return;
     }
 
+    // Tarihten yılı çıkar (Klasör ismi için)
+    const selectedYear = new Date(dateInput).getFullYear();
     const file = fileInput.files[0];
     const fileName = `${Date.now()}_${file.name}`;
+
+    // Progress Bar Başlat
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    progressContainer.classList.remove('hidden');
+    progressBar.style.width = '20%';
 
     // Supabase Storage'a görseli yükle
     const { data: uploadData, error: uploadError } = await supabaseClient
@@ -155,21 +187,64 @@ async function uploadPhoto() {
         .from('photos')
         .upload(fileName, file);
 
-    if (uploadError) return console.error('Yükleme hatası:', uploadError);
+    if (uploadError) {
+        progressContainer.classList.add('hidden');
+        return showToast('Yükleme hatası oluştu.', 'error');
+    }
+    progressBar.style.width = '60%';
 
     // Yüklenen görselin public URL'sini al
     const { data: publicUrlData } = supabaseClient.storage.from('photos').getPublicUrl(fileName);
     const imageUrl = publicUrlData.publicUrl;
+    progressBar.style.width = '80%';
 
     // Veritabanına kaydet
     const { error: dbError } = await supabaseClient
         .from('diary_entries')
-        .insert([{ image_url: imageUrl, year: parseInt(yearInput) }]);
+        .insert([{ image_url: imageUrl, year: selectedYear, photo_date: dateInput }]);
 
     if (dbError) {
-        console.error('Veritabanı kayıt hatası:', dbError);
+        showToast('Veritabanı kayıt hatası.', 'error');
     } else {
-        alert("Fotoğraf başarıyla eklendi!");
+        progressBar.style.width = '100%';
+        showToast("Anı başarıyla günlüğe eklendi!", "success");
         loadFolders(); // Klasörleri yenile
     }
+    
+    setTimeout(() => {
+        progressContainer.classList.add('hidden');
+        progressBar.style.width = '0%';
+    }, 1500);
+}
+
+// --- STICKER (SÜSLEME) SÜRÜKLE BIRAK MANTIĞI ---
+function addStickerToPage(e) {
+    if (!bookInstance) return;
+    
+    // Hangi sayfanın açık olduğunu bul
+    const activeIndex = bookInstance.getCurrentPageIndex();
+    const pages = document.querySelectorAll('.page');
+    if (!pages[activeIndex]) return;
+
+    // O sayfaya sticker oluştur
+    const sticker = document.createElement('div');
+    sticker.className = 'sticker';
+    sticker.innerText = e.target.innerText;
+    sticker.style.left = '30%';
+    sticker.style.top = '30%';
+    
+    // Sürükle bırak olayları
+    let isDragging = false;
+    sticker.addEventListener('mousedown', () => isDragging = true);
+    document.addEventListener('mouseup', () => isDragging = false);
+    document.addEventListener('mousemove', (event) => {
+        if (isDragging) {
+            const rect = sticker.parentElement.getBoundingClientRect();
+            sticker.style.left = `${event.clientX - rect.left - 20}px`;
+            sticker.style.top = `${event.clientY - rect.top - 20}px`;
+        }
+    });
+
+    pages[activeIndex].appendChild(sticker);
+    showToast("Sticker eklendi! İstediğin yere sürükleyebilirsin.", "success");
 }

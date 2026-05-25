@@ -186,7 +186,7 @@ async function openYearBook(year) {
     // 3D Kitap Animasyonunu Başlat 
     setTimeout(() => {
         try {
-            bookInstance = new StPageFlip.PageFlip(bookDiv, {
+            bookInstance = new St.PageFlip(bookDiv, {
                 width: 400, // Sayfa genişliği
                 height: 500, // Sayfa yüksekliği
                 size: "fixed", // Sabit boyutlandırma

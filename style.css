@@ -1,58 +1,105 @@
+* { box-sizing: border-box; }
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f4f9;
+    font-family: 'Poppins', sans-serif;
     margin: 0;
-    padding: 20px;
+    padding: 0;
+    min-height: 100vh;
+    background-color: #e0e5ec;
     display: flex;
     flex-direction: column;
     align-items: center;
-}
-
-.panel {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
-}
-
-.folder-grid {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
     justify-content: center;
+    overflow-x: hidden;
 }
 
-.folder {
-    background-color: #fbd962;
-    width: 120px;
-    height: 100px;
-    border-radius: 5px 15px 5px 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-    transition: transform 0.2s;
+/* Animated Background for Glassmorphism */
+#background-blobs {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1; overflow: hidden;
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+}
+.blob {
+    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6;
+    animation: float 10s infinite alternate;
+}
+.blob-1 { width: 400px; height: 400px; background: #ff9a9e; top: -100px; left: -100px; }
+.blob-2 { width: 500px; height: 500px; background: #a18cd1; bottom: -150px; right: -100px; animation-delay: -5s; }
+@keyframes float {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(50px, 50px); }
 }
 
-.folder:hover {
-    transform: scale(1.05);
+/* Glassmorphism Base Class */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    padding: 24px;
 }
 
 .hidden {
     display: none !important;
 }
 
-/* Kitap ve Sayfa Tasarımı */
-#book-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 50px;
+/* Login Section */
+#login-section.active { display: flex; flex-direction: column; width: 90%; max-width: 400px; gap: 15px; text-align: center; }
+
+input {
+    width: 100%; padding: 12px; margin-bottom: 10px;
+    border: 1px solid rgba(255,255,255,0.6); border-radius: 8px;
+    background: rgba(255,255,255,0.5); outline: none; font-family: inherit; font-size: 14px;
 }
+input:focus { background: rgba(255,255,255,0.9); }
+
+button {
+    width: 100%; padding: 12px; border: none; border-radius: 8px;
+    background: #6c5ce7; color: white; font-weight: 600; cursor: pointer;
+    transition: all 0.3s; font-family: inherit; font-size: 15px;
+}
+button:hover { background: #5b4bc4; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+/* Canva-like App Layout */
+#app-section { width: 95%; max-width: 1200px; display: flex; flex-direction: column; gap: 20px; margin: 40px 0; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; }
+.header h1 { margin: 0; font-size: 24px; color: #2d3436; }
+#logout-btn { width: auto; background: #ff7675; padding: 8px 20px; }
+#logout-btn:hover { background: #d63031; }
+
+.main-content { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+.sidebar { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 10px; }
+.sidebar h2 { margin-top: 0; color: #2d3436; font-size: 20px; }
+.sidebar label { font-size: 13px; font-weight: 600; color: #444; margin-top: 10px; }
+
+.content-area { flex: 3; min-width: 300px; min-height: 500px; }
+.content-area h2 { margin-top: 0; color: #2d3436; }
+
+/* Beautiful Folders */
+.folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 20px; margin-top: 20px; }
+.folder {
+    background: linear-gradient(135deg, #fbd962, #ffb142);
+    height: 110px; border-radius: 8px 20px 8px 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: bold; color: #fff;
+    cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s; position: relative;
+}
+.folder::before {
+    content: ''; position: absolute; top: -10px; left: 0;
+    width: 45%; height: 10px; background: #e1b12c;
+    border-radius: 8px 8px 0 0;
+}
+.folder:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+
+/* Kitap ve Sayfa Tasarımı */
+.book-modal {
+    position: fixed; top: 5%; left: 5%; width: 90%; height: 90%;
+    z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+#close-book-btn { position: absolute; top: 20px; right: 20px; width: auto; background: #2d3436; }
 
 .page {
     background-color: #fff;
@@ -65,13 +112,7 @@ body {
 }
 
 .page img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
-
-#close-book-btn {
-    margin-bottom: 20px;
-    padding: 10px 20px;
-    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }

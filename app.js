@@ -123,6 +123,7 @@ async function openYearBook(year) {
 
     // Kapak sayfası
     bookDiv.innerHTML += `<div class="page cover-page"><h2>${year} Günlüğüm</h2></div>`;
+    let pageCount = 1; // Kapak eklendi
 
     // Fotoğrafları 2'şerli olarak sayfalara böl
     const photosPerPage = 2;
@@ -150,6 +151,13 @@ async function openYearBook(year) {
         
         pageHtml += `</div>`;
         bookDiv.innerHTML += pageHtml;
+        pageCount++;
+    }
+
+    // StPageFlip kütüphanesi toplam sayfa sayısının ÇİFT olmasını zorunlu kılar.
+    // Eğer (Kapak + İç Sayfalar + Arka Kapak) toplamı tek sayıysa, araya bir boş sayfa ekleyelim:
+    if ((pageCount + 1) % 2 !== 0) {
+        bookDiv.innerHTML += `<div class="page" style="display:flex; justify-content:center; align-items:center; color:#999; font-family:'Kalam', cursive;"><h3>- Boş Sayfa -</h3></div>`;
     }
 
     // Arka kapak
@@ -169,7 +177,7 @@ async function openYearBook(year) {
         usePortrait: false // Mobilde dikey yerine her zaman kitap görünümü
     });
 
-    bookInstance.loadFromHTML(document.querySelectorAll('.page'));
+    bookInstance.loadFromHTML(bookDiv.querySelectorAll('.page'));
 }
 
 // 3. Yeni Fotoğraf Yükleme İşlemi

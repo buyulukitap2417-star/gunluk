@@ -189,7 +189,8 @@ async function uploadPhoto() {
         .storage
         .from('photos')
         .upload(fileName, file, {
-            contentType: file.type // Supabase'e dosyanın türünü (MIME type) bildir
+            cacheControl: '3600',
+            upsert: false
         });
 
     if (uploadError) {

@@ -8,7 +8,7 @@ let currentUser = null; // Giriş yapan kullanıcı bilgisi
 let currentBookYear = null; // Aktif olan defterin yılı
 
 // Sayfa Çevirme Sesi
-const flipSound = new Audio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_5128766100.mp3');
+const flipSound = new Audio('https://www.soundjay.com/misc/sounds/page-flip-01a.mp3');
 flipSound.volume = 0.5;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -47,23 +47,28 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('book-wrapper').classList.add('hidden');
         document.getElementById('app-section').classList.remove('hidden');
         
-        const bookDiv = document.getElementById('book');
-        if (bookInstance) {
-            bookInstance.destroy(); // Kitabı temizle
-            bookInstance = null;
+        try {
+            if (bookInstance) {
+                bookInstance.destroy(); // Kitabı temizle
+                bookInstance = null;
+            }
+        } catch (e) {
+            console.log("Kitap temizlenirken hata oluştu:", e);
         }
         
-        // İKİNCİ AÇILIŞ HATASINA KARŞI EN GÜVENLİ YÖNTEM:
-        // Kitabın bulunduğu ana elementi (.book-controls) bulup, içindeki #book div'ini
-        // DOM'dan tamamen kaldırıp, yerine sıfır kilometre, temiz bir #book div'i ekliyoruz.
-        // Bu, kütüphanenin geride bırakabileceği tüm kalıntıları yok eder.
-        const bookContainer = document.querySelector('.book-controls');
+        // İKİNCİ AÇILIŞ HATASINA KESİN ÇÖZÜM:
+        // Eski book alanını (eğer kütüphane silmediyse) biz siliyoruz.
         const oldBook = document.getElementById('book');
+        if (oldBook) oldBook.remove();
+        
+        const wrapper = document.querySelector('.stf__wrapper');
+        if (wrapper) wrapper.remove();
+
+        // Yerine her durumda SIFIR kilometre bir book alanı oluşturup ekliyoruz!
         const newBook = document.createElement('div');
         newBook.id = 'book';
-        if (bookContainer && oldBook) {
-            bookContainer.replaceChild(newBook, oldBook);
-        }
+        const nextBtn = document.getElementById('next-page-btn');
+        if (nextBtn) nextBtn.parentNode.insertBefore(newBook, nextBtn);
     });
     
     // Sticker Ekleme İşlemleri

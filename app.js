@@ -11,8 +11,18 @@ let currentBookYear = null; // Aktif olan defterin yılı
 const flipSound = new Audio('https://www.soundjay.com/misc/sounds/page-flip-01a.mp3');
 flipSound.volume = 0.5;
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Oturum durumunu dinle
+document.addEventListener('DOMContentLoaded', async () => {
+    
+    // İlk açılışta oturumu kontrol et (Giriş kaydını hatırla)
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+        currentUser = session.user;
+        showApp();
+    } else {
+        showLogin();
+    }
+
+    // Oturum durumunu arka planda dinle
     supabaseClient.auth.onAuthStateChange((event, session) => {
         if (session) {
             currentUser = session.user;
@@ -187,10 +197,13 @@ async function openYearBook(year) {
             const topPos = index === 0 ? Math.floor(Math.random() * 6) + 4 : Math.floor(Math.random() * 6) + 52; // Üstte veya altta
             const leftPos = Math.floor(Math.random() * 12) + 10; // %10 ile %22 arası sol boşluk
             
+            const titleHtml = entry.title ? `<div class="photo-title">${entry.title}</div>` : '';
+
             bookHtml += `
                 <div class="photo-container" style="top: ${topPos}%; left: ${leftPos}%; transform: rotate(${randomRotate}deg);">
                     <div class="tape"></div>
                     <img src="${entry.image_url}" alt="Anı">
+                    ${titleHtml}
                     <div class="photo-date">${formattedDate}</div>
                     <button class="delete-photo-btn" onclick="deletePhoto(${entry.id}, '${entry.image_url}')" title="Bu anıyı sil">🗑️</button>
                 </div>
@@ -267,6 +280,7 @@ async function openYearBook(year) {
 // 3. Yeni Fotoğraf Yükleme İşlemi
 async function uploadPhoto() {
     const fileInput = document.getElementById('file-input');
+    const titleInput = document.getElementById('title-input').value.trim();
     const dateInput = document.getElementById('date-input').value;
     
     if (!fileInput.files.length || !dateInput) {
@@ -311,7 +325,7 @@ async function uploadPhoto() {
     // Veritabanına kaydet
     const { error: dbError } = await supabaseClient
         .from('diary_entries')
-        .insert([{ image_url: imageUrl, year: selectedYear, photo_date: dateInput }]);
+        .insert([{ image_url: imageUrl, year: selectedYear, photo_date: dateInput, title: titleInput || null }]);
 
     if (dbError) {
         showToast('Veritabanı kayıt hatası.', 'error');

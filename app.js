@@ -173,7 +173,10 @@ async function uploadPhoto() {
     // Tarihten yılı çıkar (Klasör ismi için)
     const selectedYear = new Date(dateInput).getFullYear();
     const file = fileInput.files[0];
-    const fileName = `${Date.now()}_${file.name}`;
+    
+    // Dosya adındaki boşluk ve özel karakterleri temizle (Sadece harf, rakam, nokta, tire ve altçizgi kalır)
+    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
+    const fileName = `${Date.now()}_${cleanFileName}`;
 
     // Progress Bar Başlat
     const progressContainer = document.getElementById('progress-container');
@@ -185,7 +188,9 @@ async function uploadPhoto() {
     const { data: uploadData, error: uploadError } = await supabaseClient
         .storage
         .from('photos')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+            contentType: file.type // Supabase'e dosyanın türünü (MIME type) bildir
+        });
 
     if (uploadError) {
         progressContainer.classList.add('hidden');

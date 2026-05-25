@@ -5,6 +5,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let bookInstance = null; // 3D kitap objesi
 let currentUser = null; // Giriş yapan kullanıcı bilgisi
+let currentBookYear = null; // Aktif olan defterin yılı
 
 // Sayfa Çevirme Sesi
 const flipSound = new Audio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_5128766100.mp3');
@@ -52,11 +53,17 @@ document.addEventListener('DOMContentLoaded', () => {
             bookInstance = null;
         }
         
-        // İKİNCİ AÇILIŞ HATASINA KESİN ÇÖZÜM:
-        // Kütüphane geride class ve div kalıntıları bıraktığı için id="book" olan alanı tamamen silip yeniliyoruz.
-        const newBookDiv = document.createElement('div');
-        newBookDiv.id = 'book';
-        bookDiv.parentNode.replaceChild(newBookDiv, bookDiv);
+        // İKİNCİ AÇILIŞ HATASINA KARŞI EN GÜVENLİ YÖNTEM:
+        // Kitabın bulunduğu ana elementi (.book-controls) bulup, içindeki #book div'ini
+        // DOM'dan tamamen kaldırıp, yerine sıfır kilometre, temiz bir #book div'i ekliyoruz.
+        // Bu, kütüphanenin geride bırakabileceği tüm kalıntıları yok eder.
+        const bookContainer = document.querySelector('.book-controls');
+        const oldBook = document.getElementById('book');
+        const newBook = document.createElement('div');
+        newBook.id = 'book';
+        if (bookContainer && oldBook) {
+            bookContainer.replaceChild(newBook, oldBook);
+        }
     });
     
     // Sticker Ekleme İşlemleri
@@ -148,21 +155,23 @@ async function openYearBook(year) {
     document.getElementById('app-section').classList.add('hidden');
     document.getElementById('book-wrapper').classList.remove('hidden');
     
+    currentBookYear = year; // İşlem yapılan yılı global olarak kaydet
+
     // Yüklenme Ekranını Göster, Kitabı Gizle
     document.getElementById('book-loader').style.display = 'flex';
     document.querySelector('.book-controls').style.opacity = '0';
 
     const bookDiv = document.getElementById('book');
 
-    // 1. Kapak sayfası (3D kütüphane kapaklar için data-density="hard" zorunlu tutar)
-    let bookHtml = `<div class="page cover-page" data-density="hard"><div class="cover-content"><h2>${year} Günlüğüm</h2></div></div>`;
+    // 1. HTML oluşturma (Sayfa indekslerini data-page-index ile güvenli şekilde HTML'e gömüyoruz)
+    let bookHtml = `<div class="page cover-page" data-page-index="0" data-density="hard"><div class="cover-content"><h2>${year} Günlüğüm</h2></div></div>`;
     let pageCount = 1; // Kapak eklendi
 
     // Fotoğrafları 2'şerli olarak sayfalara böl
     const photosPerPage = 2;
     for (let i = 0; i < data.length; i += photosPerPage) {
         const pagePhotos = data.slice(i, i + photosPerPage);
-        bookHtml += `<div class="page">`;
+        bookHtml += `<div class="page" data-page-index="${pageCount}">`;
         
         pagePhotos.forEach((entry, index) => {
             const dateObj = new Date(entry.photo_date);
@@ -189,15 +198,32 @@ async function openYearBook(year) {
 
     // 3D Kütüphane Kuralları: Toplam sayfa sayısı ÇİFT olmalı VE minimum 4 sayfa olmalı!
     while ((pageCount + 1) % 2 !== 0 || (pageCount + 1) < 4) {
-        bookHtml += `<div class="page" data-density="soft" style="display:flex; justify-content:center; align-items:center; color:#999; font-family:'Kalam', cursive;"><h3>- Boş Sayfa -</h3></div>`;
+        bookHtml += `<div class="page" data-page-index="${pageCount}" data-density="soft" style="display:flex; justify-content:center; align-items:center; color:#999; font-family:'Kalam', cursive;"><h3>- Boş Sayfa -</h3></div>`;
         pageCount++;
     }
 
     // Arka kapak (Yine data-density="hard" zorunlu)
-    bookHtml += `<div class="page cover-page" data-density="hard"><div class="cover-content"><h2>Son</h2></div></div>`;
+    bookHtml += `<div class="page cover-page" data-page-index="${pageCount}" data-density="hard"><div class="cover-content"><h2>Son</h2></div></div>`;
 
     // Tüm sayfaları tek seferde DOM'a yazdır
     bookDiv.innerHTML = bookHtml;
+
+    // 2. Stickerları Veritabanından Çek ve Sayfalara Yerleştir
+    const { data: stickerData } = await supabaseClient
+        .from('stickers')
+        .select('*')
+        .eq('year', year);
+
+    if (stickerData) {
+        const pages = bookDiv.querySelectorAll('.page');
+        stickerData.forEach(st => {
+            const targetPage = Array.from(pages).find(p => parseInt(p.dataset.pageIndex) === st.page_index);
+            if (targetPage) {
+                const sticker = buildStickerDOM(st.id, st.emoji, st.left_pos, st.top_pos, st.page_index);
+                targetPage.appendChild(sticker);
+            }
+        });
+    }
 
     // 3D Kitap Animasyonunu Başlat 
     setTimeout(() => {
@@ -315,35 +341,36 @@ async function deletePhoto(id, imageUrl) {
     loadFolders();
 }
 
-// --- STICKER (SÜSLEME) SÜRÜKLE BIRAK MANTIĞI ---
-function addStickerToPage(e) {
-    if (!bookInstance) return;
-    
-    // Hangi sayfanın açık olduğunu bul
-    const activeIndex = bookInstance.getCurrentPageIndex();
-    const pages = document.querySelectorAll('.page');
-    if (!pages[activeIndex]) return;
+// --- STICKER YÖNETİMİ MANTIĞI ---
 
-    // O sayfaya sticker oluştur
+// Mevcut veya Yeni Sticker'ın HTML Yapısını ve Olaylarını Oluşturan Fonksiyon
+function buildStickerDOM(id, emoji, left, top, pageIndex) {
     const sticker = document.createElement('div');
     sticker.className = 'sticker';
-    sticker.innerText = e.target.innerText;
-    sticker.style.left = '30%';
-    sticker.style.top = '30%';
-    
-    // Gelişmiş Sürükle Bırak Mantığı (Ölçeklenmiş Sayfalar İçin)
+    sticker.innerText = emoji;
+    sticker.style.left = left;
+    sticker.style.top = top;
+    sticker.dataset.id = id;
+
     let offsetX = 0, offsetY = 0;
 
     sticker.addEventListener('mousedown', (e) => {
+        e.preventDefault(); 
         const rect = sticker.getBoundingClientRect();
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
-        sticker.style.zIndex = 1000; // Sürüklerken en üste al
+        sticker.style.zIndex = 1000;
 
         const onMouseMove = (event) => {
-            const parentRect = sticker.parentElement.getBoundingClientRect();
+            const elementUnderCursor = document.elementFromPoint(event.clientX, event.clientY);
+            if (!elementUnderCursor) return;
+
+            const newParentPage = elementUnderCursor.closest('.page');
+            if (newParentPage && newParentPage !== sticker.parentElement) {
+                newParentPage.appendChild(sticker);
+            }
             
-            // Yüzde (%) hesabı sayesinde 3D defterin hareketlerinden ve ölçeklerinden etkilenmez!
+            const parentRect = sticker.parentElement.getBoundingClientRect();
             let newLeft = ((event.clientX - parentRect.left - offsetX) / parentRect.width) * 100;
             let newTop = ((event.clientY - parentRect.top - offsetY) / parentRect.height) * 100;
             
@@ -351,21 +378,66 @@ function addStickerToPage(e) {
             sticker.style.top = `${newTop}%`;
         };
 
-        const onMouseUp = () => {
-            sticker.style.zIndex = 50; // Bırakınca normal katmana dön
+        const onMouseUp = async () => {
+            sticker.style.zIndex = 50;
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
+
+            // Yeni sayfa indeksini bul ve Supabase Veritabanını Güncelle
+            const newParentPage = sticker.closest('.page');
+            const newPageIndex = newParentPage ? parseInt(newParentPage.dataset.pageIndex) : pageIndex;
+
+            await supabaseClient.from('stickers').update({
+                left_pos: sticker.style.left,
+                top_pos: sticker.style.top,
+                page_index: newPageIndex
+            }).eq('id', sticker.dataset.id);
         };
         
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
     });
 
-    // Çift Tıklayarak Sticker Silme
-    sticker.addEventListener('dblclick', () => {
+    // Çift Tıklayarak Veritabanından ve Ekrandan Silme
+    sticker.addEventListener('dblclick', async () => {
         sticker.remove();
+        await supabaseClient.from('stickers').delete().eq('id', sticker.dataset.id);
+        showToast("Sticker kalıcı olarak silindi!", "success");
     });
 
-    pages[activeIndex].appendChild(sticker);
-    showToast("Sticker eklendi! Sürükleyebilir veya silmek için ÇİFT TIKLAYABİLİRSİN.", "success");
+    return sticker;
+}
+
+// Yeni Sticker Eklenmesi İşlemi
+async function addStickerToPage(e) {
+    if (!bookInstance || !currentBookYear) return;
+    
+    // Hangi sayfanın açık olduğunu bul
+    const activeIndex = bookInstance.getCurrentPageIndex();
+    const pages = document.querySelectorAll('#book .page');
+    const currentPage = pages[activeIndex];
+    if (!currentPage) return;
+
+    const emoji = e.target.innerText;
+    const left_pos = '30%'; 
+    const top_pos = '30%';
+
+    // Önce Supabase'e Kaydet ki ID'sini alabilelim
+    const { data, error } = await supabaseClient.from('stickers').insert([{
+        year: currentBookYear,
+        page_index: parseInt(currentPage.dataset.pageIndex),
+        emoji: emoji,
+        left_pos: left_pos,
+        top_pos: top_pos
+    }]).select();
+
+    if (error || !data || data.length === 0) {
+        return showToast("Sticker kaydedilirken hata oluştu!", "error");
+    }
+    
+    // Başarılı olursa Sticker'ı Ekrandaki Sayfaya Yerleştir
+    const newSticker = buildStickerDOM(data[0].id, emoji, left_pos, top_pos, data[0].page_index);
+    currentPage.appendChild(newSticker);
+    
+    showToast("Sticker eklendi! Otomatik KAYDEDİLİR. Çift tıklayarak silebilirsin.", "success");
 }

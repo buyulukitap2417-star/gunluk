@@ -122,26 +122,38 @@ async function openYearBook(year) {
     bookDiv.innerHTML = '';
 
     // Kapak sayfası
-    bookDiv.innerHTML += `<div class="page"><h2>${year} Fotoğraf Günlüğüm</h2></div>`;
+    bookDiv.innerHTML += `<div class="page cover-page"><h2>${year} Günlüğüm</h2></div>`;
 
-    // Fotoğrafları sayfa olarak ekle
-    data.forEach(entry => {
-        // Tarihi güzel bir formata çevir
-        const dateObj = new Date(entry.photo_date);
-        const formattedDate = dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-
-        bookDiv.innerHTML += `
-            <div class="page">
-                <img src="${entry.image_url}" alt="Günlük Fotoğrafı">
-                <div style="position: absolute; bottom: 20px; background: rgba(255,255,255,0.7); padding: 5px 15px; border-radius: 15px; font-weight: 600;">
-                    ${formattedDate}
+    // Fotoğrafları 2'şerli olarak sayfalara böl
+    const photosPerPage = 2;
+    for (let i = 0; i < data.length; i += photosPerPage) {
+        const pagePhotos = data.slice(i, i + photosPerPage);
+        let pageHtml = `<div class="page">`;
+        
+        pagePhotos.forEach((entry, index) => {
+            const dateObj = new Date(entry.photo_date);
+            const formattedDate = dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+            
+            // Dağınık görünüm için rastgele açılar ve konumlar
+            const randomRotate = Math.floor(Math.random() * 14) - 7; // -7 ile 7 derece arası
+            const topPos = index === 0 ? Math.floor(Math.random() * 6) + 4 : Math.floor(Math.random() * 6) + 52; // Üstte veya altta
+            const leftPos = Math.floor(Math.random() * 12) + 10; // %10 ile %22 arası sol boşluk
+            
+            pageHtml += `
+                <div class="photo-container" style="top: ${topPos}%; left: ${leftPos}%; transform: rotate(${randomRotate}deg);">
+                    <div class="tape"></div>
+                    <img src="${entry.image_url}" alt="Anı">
+                    <div class="photo-date">${formattedDate}</div>
                 </div>
-            </div>
-        `;
-    });
+            `;
+        });
+        
+        pageHtml += `</div>`;
+        bookDiv.innerHTML += pageHtml;
+    }
 
     // Arka kapak
-    bookDiv.innerHTML += `<div class="page"><h2>Son</h2></div>`;
+    bookDiv.innerHTML += `<div class="page cover-page"><h2>Son</h2></div>`;
 
     // 3D Kitap Animasyonunu Başlat
     bookInstance = new StPageFlip.PageFlip(bookDiv, {

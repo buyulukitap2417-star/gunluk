@@ -143,16 +143,27 @@ async function loadFolders() {
 
     if (error) return showToast('Klasörler yüklenirken hata oluştu.', 'error');
 
-    // Tekrar eden yılları temizle (Sadece benzersiz yıllar klasör olacak)
-    const uniqueYears = [...new Set(data.map(item => item.year))];
+    // Her yıla ait kaç tane anı olduğunu hesapla
+    const yearCounts = {};
+    data.forEach(item => {
+        yearCounts[item.year] = (yearCounts[item.year] || 0) + 1;
+    });
+    
+    // Yılları büyükten küçüğe sırala
+    const uniqueYears = Object.keys(yearCounts).sort((a, b) => b - a);
     const yearsList = document.getElementById('years-list');
     yearsList.innerHTML = '';
 
     uniqueYears.forEach(year => {
         const folder = document.createElement('div');
         folder.className = 'folder';
-        folder.innerText = year;
-        folder.onclick = () => openYearBook(year);
+        folder.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; line-height: 1.2;">
+                <span>${year}</span>
+                <span style="font-size: 13px; font-weight: normal; opacity: 0.85; margin-top: 3px;">${yearCounts[year]} Anı</span>
+            </div>
+        `;
+        folder.onclick = () => openYearBook(parseInt(year));
         yearsList.appendChild(folder);
     });
 }
@@ -182,37 +193,58 @@ async function openYearBook(year) {
     let bookHtml = `<div class="page cover-page" data-page-index="0" data-density="hard"><div class="cover-content"><h2>${year} Günlüğüm</h2></div></div>`;
     let pageCount = 1; // Kapak eklendi
 
-    // Fotoğrafları 2'şerli olarak sayfalara böl
-    const photosPerPage = 2;
-    for (let i = 0; i < data.length; i += photosPerPage) {
-        const pagePhotos = data.slice(i, i + photosPerPage);
-        bookHtml += `<div class="page" data-page-index="${pageCount}">`;
-        
-        pagePhotos.forEach((entry, index) => {
-            const dateObj = new Date(entry.photo_date);
-            const formattedDate = dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-            
-            // Dağınık görünüm için rastgele açılar ve konumlar
-            const randomRotate = Math.floor(Math.random() * 14) - 7; // -7 ile 7 derece arası
-            const topPos = index === 0 ? Math.floor(Math.random() * 6) + 4 : Math.floor(Math.random() * 6) + 52; // Üstte veya altta
-            const leftPos = Math.floor(Math.random() * 12) + 10; // %10 ile %22 arası sol boşluk
-            
-            const titleHtml = entry.title ? `<div class="photo-title">${entry.title}</div>` : '';
+    // Fotoğrafları aylara göre grupla
+    const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    const monthsData = {};
+    
+    data.forEach(entry => {
+        const monthIndex = new Date(entry.photo_date).getMonth();
+        if (!monthsData[monthIndex]) monthsData[monthIndex] = [];
+        monthsData[monthIndex].push(entry);
+    });
 
-            bookHtml += `
-                <div class="photo-container" style="top: ${topPos}%; left: ${leftPos}%; transform: rotate(${randomRotate}deg);">
-                    <div class="tape"></div>
-                    <img src="${entry.image_url}" alt="Anı">
-                    ${titleHtml}
-                    <div class="photo-date">${formattedDate}</div>
-                    <button class="delete-photo-btn" onclick="deletePhoto(${entry.id}, '${entry.image_url}')" title="Bu anıyı sil">🗑️</button>
-                </div>
-            `;
-        });
-        
-        bookHtml += `</div>`;
+    // Gruplanmış ayları sırayla (Ocak'tan Aralık'a) kitap sayfalarına dönüştür
+    const sortedMonths = Object.keys(monthsData).sort((a, b) => a - b);
+    
+    sortedMonths.forEach(monthIndex => {
+        // Ay Kapak Sayfası
+        bookHtml += `<div class="page month-cover-page" data-page-index="${pageCount}"><div class="cover-content"><h2>${monthNames[monthIndex]}</h2></div></div>`;
         pageCount++;
-    }
+
+        // O ayın fotoğraflarını 2'şerli olarak sayfalara böl
+        const monthPhotos = monthsData[monthIndex];
+        const photosPerPage = 2;
+        
+        for (let i = 0; i < monthPhotos.length; i += photosPerPage) {
+            const pagePhotos = monthPhotos.slice(i, i + photosPerPage);
+            bookHtml += `<div class="page" data-page-index="${pageCount}">`;
+            
+            pagePhotos.forEach((entry, index) => {
+                const dateObj = new Date(entry.photo_date);
+                const formattedDate = dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+                
+                // Dağınık görünüm için rastgele açılar ve konumlar
+                const randomRotate = Math.floor(Math.random() * 14) - 7;
+                const topPos = index === 0 ? Math.floor(Math.random() * 6) + 4 : Math.floor(Math.random() * 6) + 52;
+                const leftPos = Math.floor(Math.random() * 12) + 10;
+                
+                const titleHtml = entry.title ? `<div class="photo-title">${entry.title}</div>` : '';
+
+                bookHtml += `
+                    <div class="photo-container" style="top: ${topPos}%; left: ${leftPos}%; transform: rotate(${randomRotate}deg);">
+                        <div class="tape"></div>
+                        <img src="${entry.image_url}" alt="Anı">
+                        ${titleHtml}
+                        <div class="photo-date">${formattedDate}</div>
+                        <button class="delete-photo-btn" onclick="deletePhoto(${entry.id}, '${entry.image_url}')" title="Bu anıyı sil">🗑️</button>
+                    </div>
+                `;
+            });
+            
+            bookHtml += `</div>`;
+            pageCount++;
+        }
+    });
 
     // 3D Kütüphane Kuralları: Toplam sayfa sayısı ÇİFT olmalı VE minimum 4 sayfa olmalı!
     while ((pageCount + 1) % 2 !== 0 || (pageCount + 1) < 4) {

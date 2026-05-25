@@ -119,17 +119,16 @@ async function openYearBook(year) {
     document.getElementById('book-wrapper').classList.remove('hidden');
 
     const bookDiv = document.getElementById('book');
-    bookDiv.innerHTML = '';
 
-    // Kapak sayfası
-    bookDiv.innerHTML += `<div class="page cover-page"><h2>${year} Günlüğüm</h2></div>`;
+    // 1. HTML'i tek bir değişkende topla (DOM çökmesini ve render hatalarını önler)
+    let bookHtml = `<div class="page cover-page"><h2>${year} Günlüğüm</h2></div>`;
     let pageCount = 1; // Kapak eklendi
 
     // Fotoğrafları 2'şerli olarak sayfalara böl
     const photosPerPage = 2;
     for (let i = 0; i < data.length; i += photosPerPage) {
         const pagePhotos = data.slice(i, i + photosPerPage);
-        let pageHtml = `<div class="page">`;
+        bookHtml += `<div class="page">`;
         
         pagePhotos.forEach((entry, index) => {
             const dateObj = new Date(entry.photo_date);
@@ -140,7 +139,7 @@ async function openYearBook(year) {
             const topPos = index === 0 ? Math.floor(Math.random() * 6) + 4 : Math.floor(Math.random() * 6) + 52; // Üstte veya altta
             const leftPos = Math.floor(Math.random() * 12) + 10; // %10 ile %22 arası sol boşluk
             
-            pageHtml += `
+            bookHtml += `
                 <div class="photo-container" style="top: ${topPos}%; left: ${leftPos}%; transform: rotate(${randomRotate}deg);">
                     <div class="tape"></div>
                     <img src="${entry.image_url}" alt="Anı">
@@ -149,35 +148,40 @@ async function openYearBook(year) {
             `;
         });
         
-        pageHtml += `</div>`;
-        bookDiv.innerHTML += pageHtml;
+        bookHtml += `</div>`;
         pageCount++;
     }
 
     // StPageFlip kütüphanesi toplam sayfa sayısının ÇİFT olmasını zorunlu kılar.
     // Eğer (Kapak + İç Sayfalar + Arka Kapak) toplamı tek sayıysa, araya bir boş sayfa ekleyelim:
     if ((pageCount + 1) % 2 !== 0) {
-        bookDiv.innerHTML += `<div class="page" style="display:flex; justify-content:center; align-items:center; color:#999; font-family:'Kalam', cursive;"><h3>- Boş Sayfa -</h3></div>`;
+        bookHtml += `<div class="page" style="display:flex; justify-content:center; align-items:center; color:#999; font-family:'Kalam', cursive;"><h3>- Boş Sayfa -</h3></div>`;
     }
 
     // Arka kapak
-    bookDiv.innerHTML += `<div class="page cover-page"><h2>Son</h2></div>`;
+    bookHtml += `<div class="page cover-page"><h2>Son</h2></div>`;
 
-    // 3D Kitap Animasyonunu Başlat
-    bookInstance = new StPageFlip.PageFlip(bookDiv, {
-        width: 400, // Sayfa genişliği
-        height: 500, // Sayfa yüksekliği
-        size: "fixed",
-        minWidth: 300,
-        maxWidth: 500,
-        minHeight: 400,
-        maxHeight: 600,
-        drawShadow: true, // Sayfa kıvrılma gölgesi
-        showCover: true, // İlk ve son sayfanın kapak gibi davranması
-        usePortrait: false // Mobilde dikey yerine her zaman kitap görünümü
-    });
+    // Tüm sayfaları tek seferde DOM'a yazdır
+    bookDiv.innerHTML = bookHtml;
 
-    bookInstance.loadFromHTML(bookDiv.querySelectorAll('.page'));
+    // 3D Kitap Animasyonunu Başlat 
+    // (Kitap görünür olana kadar tarayıcının boyutları hesaplaması için 50ms bekliyoruz. Hatanın asıl kaynağı budur!)
+    setTimeout(() => {
+        bookInstance = new StPageFlip.PageFlip(bookDiv, {
+            width: 400, // Sayfa genişliği
+            height: 500, // Sayfa yüksekliği
+            size: "stretch", // Esnek boyutlandırma
+            minWidth: 300,
+            maxWidth: 400,
+            minHeight: 400,
+            maxHeight: 500,
+            drawShadow: true, // Sayfa kıvrılma gölgesi
+            showCover: true, // İlk ve son sayfanın kapak gibi davranması
+            usePortrait: false // Mobilde dikey yerine her zaman kitap görünümü
+        });
+
+        bookInstance.loadFromHTML(bookDiv.querySelectorAll('.page'));
+    }, 50);
 }
 
 // 3. Yeni Fotoğraf Yükleme İşlemi

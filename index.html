@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Fotoğraf Günlüğüm</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 3D Kitap Animasyonu Kütüphanesi -->
+    <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
+    <!-- Supabase JS Kütüphanesi -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <!-- Fotoğraf Yükleme Alanı (Sadece senin kullanımın için) -->
+    <div id="admin-panel" class="panel">
+        <h2>Yeni Fotoğraf Ekle</h2>
+        <input type="file" id="file-input" accept="image/*">
+        <input type="number" id="year-input" placeholder="Yıl (Örn: 2024)">
+        <button id="upload-btn">Yükle</button>
+    </div>
+
+    <!-- Ana Sayfa: Yıl Klasörleri -->
+    <div id="folders-container" class="container">
+        <h1>Fotoğraf Günlüğüm</h1>
+        <div id="years-list" class="folder-grid">
+            <!-- JS ile yıllar buraya klasör olarak eklenecek -->
+        </div>
+    </div>
+
+    <!-- 3D Kitap Alanı (Gizli başlar, klasöre tıklanınca açılır) -->
+    <div id="book-wrapper" class="hidden">
+        <button id="close-book-btn">Geri Dön</button>
+        <div id="book">
+            <!-- JS ile fotoğraflar sayfa olarak buraya eklenecek -->
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

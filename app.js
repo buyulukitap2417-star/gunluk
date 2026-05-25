@@ -6,6 +6,10 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let bookInstance = null; // 3D kitap objesi
 let currentUser = null; // Giriş yapan kullanıcı bilgisi
 
+// Sayfa Çevirme Sesi
+const flipSound = new Audio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_5128766100.mp3');
+flipSound.volume = 0.5;
+
 document.addEventListener('DOMContentLoaded', () => {
     // Oturum durumunu dinle
     supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -41,11 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('close-book-btn').addEventListener('click', () => {
         document.getElementById('book-wrapper').classList.add('hidden');
         document.getElementById('app-section').classList.remove('hidden');
+        
+        const bookDiv = document.getElementById('book');
         if (bookInstance) {
             bookInstance.destroy(); // Kitabı temizle
             bookInstance = null;
         }
-        document.getElementById('book').innerHTML = ''; // HTML'i temizle
+        bookDiv.innerHTML = ''; // HTML'i temizle
+        bookDiv.removeAttribute('style'); // İKİNCİ AÇILIŞ HATASINI ÖNLER! (Kalıntı stilleri siler)
     });
     
     // Sticker Ekleme İşlemleri
@@ -136,6 +143,10 @@ async function openYearBook(year) {
 
     document.getElementById('app-section').classList.add('hidden');
     document.getElementById('book-wrapper').classList.remove('hidden');
+    
+    // Yüklenme Ekranını Göster, Kitabı Gizle
+    document.getElementById('book-loader').style.display = 'flex';
+    document.querySelector('.book-controls').style.opacity = '0';
 
     const bookDiv = document.getElementById('book');
 
@@ -192,10 +203,24 @@ async function openYearBook(year) {
                 size: "fixed", // Sabit boyutlandırma
                 drawShadow: true, // Sayfa kıvrılma gölgesi
                 showCover: true, // İlk ve son sayfanın kapak gibi davranması
-                usePortrait: false // Mobilde dikey yerine her zaman kitap görünümü
+                usePortrait: false, // Mobilde dikey yerine her zaman kitap görünümü
+                useMouseEvents: false // TIKLAYARAK VEYA SÜRÜKLEYEREK ÇEVİRMEYİ KAPATIR (Sadece oklar)
             });
 
             bookInstance.loadFromHTML(bookDiv.querySelectorAll('.page'));
+            
+            // Ses efektini sayfaya bağla
+            bookInstance.on('flip', () => {
+                flipSound.currentTime = 0;
+                flipSound.play().catch(e => console.log('Ses engellendi', e));
+            });
+
+            // Kitap hazır olunca Yükleme Ekranını gizle
+            setTimeout(() => {
+                document.getElementById('book-loader').style.display = 'none';
+                document.querySelector('.book-controls').style.opacity = '1';
+            }, 500); // Yarım saniye derlenmesi için süre tanı
+
         } catch (e) {
             console.error("Kitap Yükleme Hatası:", e);
             showToast("Kitap animasyonu başlatılamadı!", "error");
@@ -284,13 +309,26 @@ function addStickerToPage(e) {
     
     // Sürükle bırak olayları
     let isDragging = false;
-    sticker.addEventListener('mousedown', () => isDragging = true);
-    document.addEventListener('mouseup', () => isDragging = false);
+    let offsetX = 0, offsetY = 0;
+
+    sticker.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        const rect = sticker.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        sticker.style.zIndex = 1000; // Sürüklerken en üste al
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) sticker.style.zIndex = 10; // Bırakınca normal katmana dön
+        isDragging = false;
+    });
+
     document.addEventListener('mousemove', (event) => {
         if (isDragging) {
             const rect = sticker.parentElement.getBoundingClientRect();
-            sticker.style.left = `${event.clientX - rect.left - 20}px`;
-            sticker.style.top = `${event.clientY - rect.top - 20}px`;
+            sticker.style.left = `${event.clientX - rect.left - offsetX}px`;
+            sticker.style.top = `${event.clientY - rect.top - offsetY}px`;
         }
     });
 

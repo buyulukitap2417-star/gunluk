@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Fotoğraf Günlüğüm</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <!-- 3D Kitap Animasyonu Kütüphanesi -->
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
     <!-- Supabase JS Kütüphanesi -->
@@ -12,25 +14,53 @@
 </head>
 <body>
 
-    <!-- Fotoğraf Yükleme Alanı (Sadece senin kullanımın için) -->
-    <div id="admin-panel" class="panel">
-        <h2>Yeni Fotoğraf Ekle</h2>
-        <input type="file" id="file-input" accept="image/*">
-        <input type="number" id="year-input" placeholder="Yıl (Örn: 2024)">
-        <button id="upload-btn">Yükle</button>
+    <!-- Animasyonlu Arka Plan (Glassmorphism için) -->
+    <div id="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
     </div>
 
-    <!-- Ana Sayfa: Yıl Klasörleri -->
-    <div id="folders-container" class="container">
-        <h1>Fotoğraf Günlüğüm</h1>
-        <div id="years-list" class="folder-grid">
-            <!-- JS ile yıllar buraya klasör olarak eklenecek -->
+    <!-- Giriş Ekranı (Sadece yetkili kişi görebilir) -->
+    <div id="login-section" class="glass-panel active">
+        <h2>Günlüğe Giriş</h2>
+        <p style="color: #444; font-size: 14px; margin-top: 0;">Devam etmek için giriş yapmalısınız.</p>
+        <input type="email" id="email-input" placeholder="E-posta Adresiniz">
+        <input type="password" id="password-input" placeholder="Şifreniz">
+        <button id="login-btn">Giriş Yap</button>
+        <p id="login-error" style="color: #d63031; display: none; font-size: 14px;"></p>
+    </div>
+
+    <!-- Ana Uygulama Paneli -->
+    <div id="app-section" class="hidden">
+        <header class="glass-panel header">
+            <h1>Fotoğraf Günlüğüm</h1>
+            <button id="logout-btn">Çıkış Yap</button>
+        </header>
+
+        <div class="main-content">
+            <!-- Sol Menü: Fotoğraf Yükleme Alanı -->
+            <aside id="admin-panel" class="glass-panel sidebar">
+                <h2>Yeni Anı Ekle</h2>
+                <label>Fotoğraf Seç</label>
+                <input type="file" id="file-input" accept="image/*">
+                <label>Yıl</label>
+                <input type="number" id="year-input" placeholder="Örn: 2024">
+                <button id="upload-btn">Yükle</button>
+            </aside>
+
+            <!-- Sağ İçerik: Yıl Klasörleri -->
+            <main id="folders-container" class="glass-panel content-area">
+                <h2>Klasörlerim</h2>
+                <div id="years-list" class="folder-grid">
+                    <!-- JS ile yıllar buraya klasör olarak eklenecek -->
+                </div>
+            </main>
         </div>
     </div>
 
     <!-- 3D Kitap Alanı (Gizli başlar, klasöre tıklanınca açılır) -->
-    <div id="book-wrapper" class="hidden">
-        <button id="close-book-btn">Geri Dön</button>
+    <div id="book-wrapper" class="hidden glass-panel book-modal">
+        <button id="close-book-btn">✖ Kapat</button>
         <div id="book">
             <!-- JS ile fotoğraflar sayfa olarak buraya eklenecek -->
         </div>

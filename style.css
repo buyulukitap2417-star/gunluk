@@ -143,11 +143,30 @@ button:hover { background: #5b4bc4; transform: translateY(-2px); box-shadow: 0 4
 }
 #close-book-btn { position: absolute; top: 20px; right: 20px; width: auto; background: #2d3436; }
 
-#book {
+/* Kitap ve Ok Butonları Konteyneri */
+.book-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
     width: 100%;
-    max-width: 800px;
-    height: 500px;
+    max-width: 950px;
     margin: 0 auto;
+}
+.nav-btn {
+    width: 50px; height: 50px; flex-shrink: 0;
+    border-radius: 50%; background: #2d3436; color: white;
+    font-size: 20px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 10; border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+}
+.nav-btn:hover { background: #6c5ce7; transform: scale(1.1); }
+
+#book {
+    width: 800px; /* Kütüphanenin çökmemesi için sabit değer */
+    height: 500px;
+    max-width: 100%;
 }
 
 .page {
@@ -159,8 +178,6 @@ button:hover { background: #5b4bc4; transform: translateY(-2px); box-shadow: 0 4
     overflow: hidden;
     position: relative; /* Stickerlar için gerekli */
     border: 1px solid #ddd;
-    height: 100%;
-    min-height: 500px; /* İçerik absolute olduğu için çökmesini engeller */
 }
 
 /* Kapak Sayfası */

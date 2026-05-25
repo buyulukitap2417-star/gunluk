@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Fotoğraf Günlüğüm</title>
+    <!-- PWA Meta Etiketleri -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#fbd962">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3131/3131604.png">
     <link rel="stylesheet" href="style.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
@@ -97,5 +101,16 @@
     </div>
 
     <script src="app.js"></script>
+
+    <!-- Service Worker Kaydı (PWA İçin) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker aktif!', reg))
+                    .catch(err => console.log('Service Worker hatası:', err));
+            });
+        }
+    </script>
 </body>
 </html>

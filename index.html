@@ -14,6 +14,9 @@
 </head>
 <body>
 
+    <!-- Bildirim (Toast) Konteyneri -->
+    <div id="toast-container"></div>
+
     <!-- Animasyonlu Arka Plan (Glassmorphism için) -->
     <div id="background-blobs">
         <div class="blob blob-1"></div>
@@ -43,8 +46,11 @@
                 <h2>Yeni Anı Ekle</h2>
                 <label>Fotoğraf Seç</label>
                 <input type="file" id="file-input" accept="image/*">
-                <label>Yıl</label>
-                <input type="number" id="year-input" placeholder="Örn: 2024">
+                <label>Tarih Seç</label>
+                <input type="date" id="date-input">
+                <div id="progress-container" class="hidden">
+                    <div id="progress-bar"></div>
+                </div>
                 <button id="upload-btn">Yükle</button>
             </aside>
 
@@ -61,6 +67,17 @@
     <!-- 3D Kitap Alanı (Gizli başlar, klasöre tıklanınca açılır) -->
     <div id="book-wrapper" class="hidden glass-panel book-modal">
         <button id="close-book-btn">✖ Kapat</button>
+        
+        <!-- Sticker (Süsleme) Araç Çubuğu -->
+        <div id="sticker-toolbar" class="glass-panel">
+            <span style="font-size: 14px; font-weight: 600;">Süslemeler:</span>
+            <button class="sticker-btn">⭐</button>
+            <button class="sticker-btn">💖</button>
+            <button class="sticker-btn">🎉</button>
+            <button class="sticker-btn">🌸</button>
+            <button class="sticker-btn">🔥</button>
+        </div>
+
         <div id="book">
             <!-- JS ile fotoğraflar sayfa olarak buraya eklenecek -->
         </div>

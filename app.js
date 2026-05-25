@@ -1,14 +1,14 @@
 // KENDİ SUPABASE BİLGİLERİNİ BURAYA GİR
 const SUPABASE_URL = 'https://mpqncrkclcprjmaohpgm.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_0TPVUMiQ0_5zLkzhcEe4yQ_xsDSIaF4';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let bookInstance = null; // 3D kitap objesi
 let currentUser = null; // Giriş yapan kullanıcı bilgisi
 
 document.addEventListener('DOMContentLoaded', () => {
     // Oturum durumunu dinle
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
         if (session) {
             currentUser = session.user;
             showApp();
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('password-input').value;
         const errorEl = document.getElementById('login-error');
         
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) {
             errorEl.innerText = "Giriş başarısız: Bilgilerinizi kontrol edin.";
             errorEl.style.display = "block";
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Çıkış Yapma İşlemi
     document.getElementById('logout-btn').addEventListener('click', async () => {
-        await supabase.auth.signOut();
+        await supabaseClient.auth.signOut();
     });
     
     // Yükleme Butonu İşlemi
@@ -67,7 +67,7 @@ function showLogin() {
 
 // 1. Klasörleri (Yılları) Supabase'den Çek
 async function loadFolders() {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('diary_entries')
         .select('year')
         .order('year', { ascending: false });
@@ -90,7 +90,7 @@ async function loadFolders() {
 
 // 2. Bir klasöre tıklanınca o yılın fotoğraflarını getir ve kitabı oluştur
 async function openYearBook(year) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('diary_entries')
         .select('*')
         .eq('year', year)
@@ -150,7 +150,7 @@ async function uploadPhoto() {
     const fileName = `${Date.now()}_${file.name}`;
 
     // Supabase Storage'a görseli yükle
-    const { data: uploadData, error: uploadError } = await supabase
+    const { data: uploadData, error: uploadError } = await supabaseClient
         .storage
         .from('photos')
         .upload(fileName, file);
@@ -158,11 +158,11 @@ async function uploadPhoto() {
     if (uploadError) return console.error('Yükleme hatası:', uploadError);
 
     // Yüklenen görselin public URL'sini al
-    const { data: publicUrlData } = supabase.storage.from('photos').getPublicUrl(fileName);
+    const { data: publicUrlData } = supabaseClient.storage.from('photos').getPublicUrl(fileName);
     const imageUrl = publicUrlData.publicUrl;
 
     // Veritabanına kaydet
-    const { error: dbError } = await supabase
+    const { error: dbError } = await supabaseClient
         .from('diary_entries')
         .insert([{ image_url: imageUrl, year: parseInt(yearInput) }]);
 

@@ -52,6 +52,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.sticker-btn').forEach(btn => {
         btn.addEventListener('click', addStickerToPage);
     });
+
+    // Ok Butonlarıyla Sayfa Çevirme
+    document.getElementById('prev-page-btn').addEventListener('click', () => {
+        if (bookInstance) bookInstance.flipPrev();
+    });
+    document.getElementById('next-page-btn').addEventListener('click', () => {
+        if (bookInstance) bookInstance.flipNext();
+    });
+
+    // Klavyedeki Ok Tuşlarıyla Sayfa Çevirme (Sol / Sağ)
+    document.addEventListener('keydown', (e) => {
+        if (bookInstance && !document.getElementById('book-wrapper').classList.contains('hidden')) {
+            if (e.key === 'ArrowRight') {
+                bookInstance.flipNext();
+            } else if (e.key === 'ArrowLeft') {
+                bookInstance.flipPrev();
+            }
+        }
+    });
 });
 
 // Arayüz Geçiş Fonksiyonları
@@ -165,12 +184,11 @@ async function openYearBook(year) {
     bookDiv.innerHTML = bookHtml;
 
     // 3D Kitap Animasyonunu Başlat 
-    // (Kitap görünür olana kadar tarayıcının boyutları hesaplaması için 50ms bekliyoruz. Hatanın asıl kaynağı budur!)
     setTimeout(() => {
         bookInstance = new StPageFlip.PageFlip(bookDiv, {
             width: 400, // Sayfa genişliği
             height: 500, // Sayfa yüksekliği
-            size: "stretch", // Esnek boyutlandırma
+            size: "fixed", // Sabit boyutlandırma (Sayfaların alt alta dizilmesini ve çökmeyi kesin engeller)
             minWidth: 300,
             maxWidth: 400,
             minHeight: 400,
@@ -181,7 +199,7 @@ async function openYearBook(year) {
         });
 
         bookInstance.loadFromHTML(bookDiv.querySelectorAll('.page'));
-    }, 50);
+    }, 100); // 100ms güvenli bekleme süresi
 }
 
 // 3. Yeni Fotoğraf Yükleme İşlemi

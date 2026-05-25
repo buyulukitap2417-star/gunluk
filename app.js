@@ -139,8 +139,8 @@ async function openYearBook(year) {
 
     const bookDiv = document.getElementById('book');
 
-    // 1. HTML'i tek bir değişkende topla (DOM çökmesini ve render hatalarını önler)
-    let bookHtml = `<div class="page cover-page"><h2>${year} Günlüğüm</h2></div>`;
+    // 1. Kapak sayfası (3D kütüphane kapaklar için data-density="hard" zorunlu tutar)
+    let bookHtml = `<div class="page cover-page" data-density="hard"><div class="cover-content"><h2>${year} Günlüğüm</h2></div></div>`;
     let pageCount = 1; // Kapak eklendi
 
     // Fotoğrafları 2'şerli olarak sayfalara böl
@@ -171,35 +171,36 @@ async function openYearBook(year) {
         pageCount++;
     }
 
-    // StPageFlip kütüphanesi toplam sayfa sayısının ÇİFT olmasını zorunlu kılar.
-    // Eğer (Kapak + İç Sayfalar + Arka Kapak) toplamı tek sayıysa, araya bir boş sayfa ekleyelim:
-    if ((pageCount + 1) % 2 !== 0) {
-        bookHtml += `<div class="page" style="display:flex; justify-content:center; align-items:center; color:#999; font-family:'Kalam', cursive;"><h3>- Boş Sayfa -</h3></div>`;
+    // 3D Kütüphane Kuralları: Toplam sayfa sayısı ÇİFT olmalı VE minimum 4 sayfa olmalı!
+    while ((pageCount + 1) % 2 !== 0 || (pageCount + 1) < 4) {
+        bookHtml += `<div class="page" data-density="soft" style="display:flex; justify-content:center; align-items:center; color:#999; font-family:'Kalam', cursive;"><h3>- Boş Sayfa -</h3></div>`;
+        pageCount++;
     }
 
-    // Arka kapak
-    bookHtml += `<div class="page cover-page"><h2>Son</h2></div>`;
+    // Arka kapak (Yine data-density="hard" zorunlu)
+    bookHtml += `<div class="page cover-page" data-density="hard"><div class="cover-content"><h2>Son</h2></div></div>`;
 
     // Tüm sayfaları tek seferde DOM'a yazdır
     bookDiv.innerHTML = bookHtml;
 
     // 3D Kitap Animasyonunu Başlat 
     setTimeout(() => {
-        bookInstance = new StPageFlip.PageFlip(bookDiv, {
-            width: 400, // Sayfa genişliği
-            height: 500, // Sayfa yüksekliği
-            size: "fixed", // Sabit boyutlandırma (Sayfaların alt alta dizilmesini ve çökmeyi kesin engeller)
-            minWidth: 300,
-            maxWidth: 400,
-            minHeight: 400,
-            maxHeight: 500,
-            drawShadow: true, // Sayfa kıvrılma gölgesi
-            showCover: true, // İlk ve son sayfanın kapak gibi davranması
-            usePortrait: false // Mobilde dikey yerine her zaman kitap görünümü
-        });
+        try {
+            bookInstance = new StPageFlip.PageFlip(bookDiv, {
+                width: 400, // Sayfa genişliği
+                height: 500, // Sayfa yüksekliği
+                size: "fixed", // Sabit boyutlandırma
+                drawShadow: true, // Sayfa kıvrılma gölgesi
+                showCover: true, // İlk ve son sayfanın kapak gibi davranması
+                usePortrait: false // Mobilde dikey yerine her zaman kitap görünümü
+            });
 
-        bookInstance.loadFromHTML(bookDiv.querySelectorAll('.page'));
-    }, 100); // 100ms güvenli bekleme süresi
+            bookInstance.loadFromHTML(bookDiv.querySelectorAll('.page'));
+        } catch (e) {
+            console.error("Kitap Yükleme Hatası:", e);
+            showToast("Kitap animasyonu başlatılamadı!", "error");
+        }
+    }, 150); // 150ms güvenli bekleme süresi
 }
 
 // 3. Yeni Fotoğraf Yükleme İşlemi

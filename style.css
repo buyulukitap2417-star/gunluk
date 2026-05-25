@@ -82,7 +82,7 @@ body {
 .sticker-btn:hover { transform: scale(1.3); background: none; box-shadow: none; }
 
 .sticker {
-    position: absolute; font-size: 40px; cursor: grab; user-select: none; z-index: 10;
+    position: absolute; font-size: 40px; cursor: grab; user-select: none; z-index: 50; /* Fotoğrafların üstünde kalması için artırıldı */
     filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
 }
 .sticker:active { cursor: grabbing; }
@@ -230,6 +230,22 @@ button:hover { background: #5b4bc4; transform: translateY(-2px); box-shadow: 0 4
     height: 180px;
     object-fit: cover;
     border-radius: 2px;
+}
+
+/* Fotoğraf Silme Butonu */
+.delete-photo-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(255, 255, 255, 0.9); border: none; border-radius: 50%;
+    width: 32px; height: 32px; font-size: 16px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    opacity: 0; transition: all 0.2s; z-index: 20;
+}
+.photo-container:hover .delete-photo-btn {
+    opacity: 1;
+}
+.delete-photo-btn:hover {
+    background: #ff7675; color: white; transform: scale(1.1);
 }
 
 /* Bant Efekti (Washi Tape) */

@@ -51,8 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
             bookInstance.destroy(); // Kitabı temizle
             bookInstance = null;
         }
-        bookDiv.innerHTML = ''; // HTML'i temizle
-        bookDiv.removeAttribute('style'); // İKİNCİ AÇILIŞ HATASINI ÖNLER! (Kalıntı stilleri siler)
+        
+        // İKİNCİ AÇILIŞ HATASINA KESİN ÇÖZÜM:
+        // Kütüphane geride class ve div kalıntıları bıraktığı için id="book" olan alanı tamamen silip yeniliyoruz.
+        const newBookDiv = document.createElement('div');
+        newBookDiv.id = 'book';
+        bookDiv.parentNode.replaceChild(newBookDiv, bookDiv);
     });
     
     // Sticker Ekleme İşlemleri
@@ -174,6 +178,7 @@ async function openYearBook(year) {
                     <div class="tape"></div>
                     <img src="${entry.image_url}" alt="Anı">
                     <div class="photo-date">${formattedDate}</div>
+                    <button class="delete-photo-btn" onclick="deletePhoto(${entry.id}, '${entry.image_url}')" title="Bu anıyı sil">🗑️</button>
                 </div>
             `;
         });
@@ -291,6 +296,25 @@ async function uploadPhoto() {
     }, 1500);
 }
 
+// 4. Fotoğraf Silme İşlemi
+async function deletePhoto(id, imageUrl) {
+    if (!confirm("Bu anıyı tamamen silmek istediğine emin misin?")) return;
+
+    // Supabase Veritabanından Sil
+    const { error: dbError } = await supabaseClient.from('diary_entries').delete().eq('id', id);
+    if (dbError) return showToast("Fotoğraf silinirken hata oluştu.", "error");
+
+    // Storage'dan (Depolamadan) Sil (Temizlik için)
+    const fileName = imageUrl.split('/').pop();
+    await supabaseClient.storage.from('photos').remove([fileName]);
+
+    showToast("Anı başarıyla günlüğünden silindi.", "success");
+    
+    // Kitabı kapat ve klasörleri yenile
+    document.getElementById('close-book-btn').click(); 
+    loadFolders();
+}
+
 // --- STICKER (SÜSLEME) SÜRÜKLE BIRAK MANTIĞI ---
 function addStickerToPage(e) {
     if (!bookInstance) return;
@@ -307,31 +331,41 @@ function addStickerToPage(e) {
     sticker.style.left = '30%';
     sticker.style.top = '30%';
     
-    // Sürükle bırak olayları
-    let isDragging = false;
+    // Gelişmiş Sürükle Bırak Mantığı (Ölçeklenmiş Sayfalar İçin)
     let offsetX = 0, offsetY = 0;
 
     sticker.addEventListener('mousedown', (e) => {
-        isDragging = true;
         const rect = sticker.getBoundingClientRect();
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
         sticker.style.zIndex = 1000; // Sürüklerken en üste al
+
+        const onMouseMove = (event) => {
+            const parentRect = sticker.parentElement.getBoundingClientRect();
+            
+            // Yüzde (%) hesabı sayesinde 3D defterin hareketlerinden ve ölçeklerinden etkilenmez!
+            let newLeft = ((event.clientX - parentRect.left - offsetX) / parentRect.width) * 100;
+            let newTop = ((event.clientY - parentRect.top - offsetY) / parentRect.height) * 100;
+            
+            sticker.style.left = `${newLeft}%`;
+            sticker.style.top = `${newTop}%`;
+        };
+
+        const onMouseUp = () => {
+            sticker.style.zIndex = 50; // Bırakınca normal katmana dön
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
     });
 
-    document.addEventListener('mouseup', () => {
-        if (isDragging) sticker.style.zIndex = 10; // Bırakınca normal katmana dön
-        isDragging = false;
-    });
-
-    document.addEventListener('mousemove', (event) => {
-        if (isDragging) {
-            const rect = sticker.parentElement.getBoundingClientRect();
-            sticker.style.left = `${event.clientX - rect.left - offsetX}px`;
-            sticker.style.top = `${event.clientY - rect.top - offsetY}px`;
-        }
+    // Çift Tıklayarak Sticker Silme
+    sticker.addEventListener('dblclick', () => {
+        sticker.remove();
     });
 
     pages[activeIndex].appendChild(sticker);
-    showToast("Sticker eklendi! İstediğin yere sürükleyebilirsin.", "success");
+    showToast("Sticker eklendi! Sürükleyebilir veya silmek için ÇİFT TIKLAYABİLİRSİN.", "success");
 }

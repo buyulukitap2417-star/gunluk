@@ -4,9 +4,37 @@ const SUPABASE_KEY = 'sb_publishable_0TPVUMiQ0_5zLkzhcEe4yQ_xsDSIaF4';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let bookInstance = null; // 3D kitap objesi
+let currentUser = null; // Giriş yapan kullanıcı bilgisi
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadFolders();
+    // Oturum durumunu dinle
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (session) {
+            currentUser = session.user;
+            showApp();
+        } else {
+            currentUser = null;
+            showLogin();
+        }
+    });
+
+    // Giriş Yapma İşlemi
+    document.getElementById('login-btn').addEventListener('click', async () => {
+        const email = document.getElementById('email-input').value;
+        const password = document.getElementById('password-input').value;
+        const errorEl = document.getElementById('login-error');
+        
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+            errorEl.innerText = "Giriş başarısız: Bilgilerinizi kontrol edin.";
+            errorEl.style.display = "block";
+        }
+    });
+
+    // Çıkış Yapma İşlemi
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+        await supabase.auth.signOut();
+    });
     
     // Yükleme Butonu İşlemi
     document.getElementById('upload-btn').addEventListener('click', uploadPhoto);
@@ -14,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Kitabı Kapatma Butonu İşlemi
     document.getElementById('close-book-btn').addEventListener('click', () => {
         document.getElementById('book-wrapper').classList.add('hidden');
-        document.getElementById('folders-container').classList.remove('hidden');
+        document.getElementById('app-section').classList.remove('hidden');
         if (bookInstance) {
             bookInstance.destroy(); // Kitabı temizle
             bookInstance = null;
@@ -22,6 +50,20 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('book').innerHTML = ''; // HTML'i temizle
     });
 });
+
+// Arayüz Geçiş Fonksiyonları
+function showApp() {
+    document.getElementById('login-section').classList.add('hidden');
+    document.getElementById('login-section').classList.remove('active');
+    document.getElementById('app-section').classList.remove('hidden');
+    loadFolders(); // Giriş yapınca klasörleri getir
+}
+
+function showLogin() {
+    document.getElementById('app-section').classList.add('hidden');
+    document.getElementById('login-section').classList.remove('hidden');
+    document.getElementById('login-section').classList.add('active');
+}
 
 // 1. Klasörleri (Yılları) Supabase'den Çek
 async function loadFolders() {
@@ -56,7 +98,7 @@ async function openYearBook(year) {
 
     if (error) return console.error('Fotoğraf çekme hatası:', error);
 
-    document.getElementById('folders-container').classList.add('hidden');
+    document.getElementById('app-section').classList.add('hidden');
     document.getElementById('book-wrapper').classList.remove('hidden');
 
     const bookDiv = document.getElementById('book');

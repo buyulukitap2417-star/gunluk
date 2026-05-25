@@ -112,9 +112,13 @@ button:hover { background: #5b4bc4; transform: translateY(-2px); box-shadow: 0 4
 #logout-btn:hover { background: #d63031; }
 
 .main-content { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
-.sidebar { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 10px; }
-.sidebar h2 { margin-top: 0; color: #2d3436; font-size: 20px; }
+
+/* Modern Sidebar (Upload Panel) */
+.sidebar { flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 10px; background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.5)); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+.sidebar h2 { margin-top: 0; color: #2d3436; font-size: 22px; border-bottom: 2px dashed #fbd962; padding-bottom: 15px; text-align: center; }
 .sidebar label { font-size: 13px; font-weight: 600; color: #444; margin-top: 10px; }
+.sidebar input, .sidebar button { border-radius: 12px; }
+.sidebar input[type="file"] { background: white; cursor: pointer; padding: 8px; }
 
 .content-area { flex: 3; min-width: 300px; min-height: 500px; }
 .content-area h2 { margin-top: 0; color: #2d3436; }
@@ -215,7 +219,7 @@ button:hover { background: #5b4bc4; transform: translateY(-2px); box-shadow: 0 4
     position: absolute;
     width: 65%;
     background: white;
-    padding: 10px 10px 35px 10px;
+    padding: 10px 10px 45px 10px; /* Başlık ve tarih için alt boşluk artırıldı */
     box-shadow: 2px 4px 12px rgba(0,0,0,0.15);
     border-radius: 2px;
     display: flex;
@@ -227,7 +231,7 @@ button:hover { background: #5b4bc4; transform: translateY(-2px); box-shadow: 0 4
 
 .photo-container img {
     width: 100%;
-    height: 180px;
+    height: 150px; /* Başlığa yer açmak için biraz küçültüldü */
     object-fit: cover;
     border-radius: 2px;
 }
@@ -266,12 +270,56 @@ button:hover { background: #5b4bc4; transform: translateY(-2px); box-shadow: 0 4
     transform: translateX(-50%) rotate(4deg);
 }
 
+/* Başlık Yazısı */
+.photo-title {
+    font-family: 'Kalam', cursive;
+    font-size: 16px;
+    color: #2d3436;
+    text-align: center;
+    margin-top: 8px;
+    line-height: 1.1;
+}
+
 /* Tarih Yazısı */
 .photo-date {
     position: absolute;
     bottom: 8px;
     font-family: 'Kalam', 'Poppins', cursive;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
-    color: #333;
+    color: #777;
+}
+
+/* MOBİL UYUMLULUK (Responsive Design) */
+@media (max-width: 850px) {
+    .book-controls { transform: scale(0.7); transform-origin: top center; margin-top: 20px; }
+}
+
+@media (max-width: 600px) {
+    body { padding: 10px; }
+    #app-section { margin: 20px 0; }
+    .header { flex-direction: column; gap: 15px; text-align: center; }
+    .main-content { flex-direction: column; }
+    .sidebar, .content-area { width: 100%; min-width: 100%; }
+    .folder-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+    
+    /* Mobil 3D Kitap Ölçeklendirmesi (Kütüphaneyi bozmamak için CSS Transform kullanıyoruz) */
+    .book-modal { padding-top: 70px; align-items: center; justify-content: flex-start; overflow-y: auto; overflow-x: hidden;}
+    .book-controls { 
+        position: relative;
+        transform: scale(0.42); /* 800px genişliği mobil ekrana sığdırır */
+        transform-origin: top center; 
+        gap: 0;
+    }
+    /* Ok butonlarını mobilde kitabın dışına, daha kolay basılacak şekilde konumlandırıyoruz */
+    .nav-btn {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        width: 80px; height: 80px; font-size: 32px; z-index: 100;
+    }
+    #prev-page-btn { left: -50px; }
+    #next-page-btn { right: -50px; }
+    
+    #close-book-btn { top: 10px; right: 10px; font-size: 14px; z-index: 250; }
+    #sticker-toolbar { top: 10px; left: 10px; flex-wrap: wrap; width: 65%; z-index: 200; }
+    .sticker-btn { font-size: 20px; }
 }
